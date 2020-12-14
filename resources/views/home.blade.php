@@ -133,31 +133,41 @@
                     <table id="example" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
+                                <th>Id</th>
                                 <th>Name</th>
-                                <th>Position</th>
-                                <th>Office</th>
-                                <th>Age</th>
-                                <th>Start date</th>
-                                <th>Salary</th>
+                                <th>Phone</th>
+                                <th>Optional Phone</th>
+                                <th>Email</th>
+                                <th>Image</th>
+                                <th>Action</th>
+                                <th>Share</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Tiger Nixon</td>
-                                <td>System Architect</td>
-                                <td>Edinburgh</td>
-                                <td>61</td>
-                                <td>2011/04/25</td>
-                                <td>$320,800</td>
-                            </tr>
-                            <tr>
-                                <td>Garrett Winters</td>
-                                <td>Accountant</td>
-                                <td>Tokyo</td>
-                                <td>63</td>
-                                <td>2011/07/25</td>
-                                <td>$170,750</td>
-                            </tr>
+                            @php $i = 1 @endphp
+                            @if(isset($data))
+                                @foreach($data as $k => $v)
+                                    <tr>
+                                        <td>{{$i}}</td>
+                                        <td>{{$v->first_name}} {{$v->middle_name}} {{$v->last_name}}</td>
+                                        <td>{{$v->phone}}</td>
+                                        <td>{{$v->phone_optional}}</td>
+                                        <td>{{$v->email}}</td>
+                                        @if(isset($v->image))
+                                        <td><a href="{{asset($v->image)}}" download>Download</a></td>
+                                        @else
+                                        <td>-</td>
+                                        @endif
+                                        <td><a href="{{url('edit')}}/{{$v->id}}" class="btn btn-primary">Edit</a></td>
+                                        @php $class = 'btn-primary'; @endphp
+                                        @if($v->creted_by == Auth::id() && $v->modified_by == Auth::id())
+                                        @php $class = 'btn-danger share'; @endphp
+                                        @endif
+                                        <td><input type="button" class="btn  {{$class}}" value="Share" id="{{$v->id}}" data_id = "{{$v->id}}" data-toggle="modal" data-target="#myModal"></td>
+                                    </tr>
+                                    @php $i++ @endphp
+                                @endforeach
+                            @endif
                         </tbody>
                     </table>
 
@@ -168,9 +178,90 @@
     </div>
 </div>
 
+<div id="myModal" class="modal" role="dialog" data-backdrop="false">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Share Details</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <select class="form-control share_id">
+        @foreach($other_user as $k => $v)
+            <option value="{{$v->id}}">{{$v->first_name}} {{$v->last_name}}</option>
+        @endforeach
+        </select>
+      </div>
+      <div class="modal-footer">
+        <input type="button" class="btn btn-primary share_submit" name="submit" value="Submit">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="myModal1" class="modal" role="dialog" data-backdrop="false">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Share Details</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <select class="form-control share_id">
+        @foreach($other_user as $k => $v)
+            <option value="{{$v->id}}">{{$v->first_name}} {{$v->last_name}}</option>
+        @endforeach
+        </select>
+      </div>
+      <div class="modal-footer">
+        <input type="button" class="btn btn-primary share_submit" name="submit" value="Submit">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script type="text/javascript">
     $(document).ready(function() {
         $('#example').DataTable();
     } );
+
+    var id = '';
+    $(document).on('click','.share',function()
+    {
+        id  = $(this).attr('data_id');
+        $(this).hide();
+    });
+
+    $(document).on('click','.share_submit',function(){
+
+        var share_user_id  = $('.share_id').val();
+
+        $.ajaxSetup({
+          headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+          }
+        });
+
+
+        $.ajax({
+            url: "{{url('share_deatils')}}",
+            data: {"_token": "{{ csrf_token() }}","id":id,'share_user_id':share_user_id},
+            type: 'POST',
+            success: function(data){
+                alert(data.msg);
+                $('#myModal').hide();
+                $('#'+id).removeClass('share');
+                return false;
+            }
+        });
+    });
 </script>
 @endsection

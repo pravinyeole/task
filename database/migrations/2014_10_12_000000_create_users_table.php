@@ -26,6 +26,7 @@ class CreateUsersTable extends Migration
             $table->string('password')->nullable();
             $table->integer('created_by')->nullable();
             $table->integer('modified_by')->nullable();
+            $tabel->tinyInteger('is_verified')->default('0');
             $table->rememberToken();
             $table->timestamps();
         });

@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends Controller
 {
@@ -87,7 +88,31 @@ class RegisterController extends Controller
         $res['phone_optional'] = $data['phone_optional'];
         $res['email'] = $data['email'];
         $res['password'] = Hash::make($data['password']);
-
-        return User::create($res);
+        $this->testmail($res['email']);
+         User::create($res);
+        return redirect($this->redirectPath())->with('message', 'Plese verify Your account');
     }
+
+    public function testmail($email = null){
+
+        $name = 'verify mail';
+        $html_data = '<a href="http://localhost/task/public/verify_user/'.$email.'" target="_blank" class="btn btn-primary">CLick Here To Verify Your account</a>';
+        $subject = 'Verify Your account';
+        $data = array();
+        $name = "Aniket Tandale";
+        $subject = "Password Reset Link";
+
+        Mail::send([], [], function ($message)use ($email,$name,$subject,$html_data) {
+            $message->to($email,$name)
+            ->subject($subject)
+            ->setBody($html_data, 'text/html')
+            ->setfrom('nmmc@cdaat.in','Test Account');
+        });
+    }
+
+    public function verify_user($email = null)
+    {
+        User::where('email',$email)->update(['is_verified'=>1]);
+        return redirect('login')->with('success','Account verify sucessfully');
+    }   
 }

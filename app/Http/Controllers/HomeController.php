@@ -17,7 +17,7 @@ class HomeController extends Controller
     public function __construct()
     {
         //$this->middleware('auth');
-        $this->middleware(['auth','verified']);
+        $this->middleware(['auth','is_verified']);
     }
 
     /**
@@ -27,7 +27,10 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home');
+        $data = User::where('created_by',Auth::id())->get();
+        $other_user = User::where('created_by',null)->where('email','!=',Auth::user()->email)->get();
+
+        return view('home',compact('data','other_user'));
     }
 
     protected function contact_reg(Request $request)
@@ -61,7 +64,28 @@ class HomeController extends Controller
         $data['email'] = $request->email;
         $data['created_by'] = Auth::id();
         $data['modified_by'] = Auth::id();
-         User::create($data);
-        return back()->with('success', 'Contact form created successfully.'); 
+        if(isset($request->old_id))
+        {
+            User::where('id',$request->old_id)->update($data);
+            $msg = 'Contact form updated successfully.';
+        }
+        else
+        {
+            User::create($data);
+            $msg = 'Contact form created successfully.';
+        }
+        return redirect('/home')->back()->with('success', $msg); 
+    }
+
+    public function share_deatils(Request $request)
+    {
+        User::where('id',$request->share_user_id)->update(['modified_by'=>$request->id]);
+        return ["status"=>true,"msg"=>"Contact Share successfully"];
+    }
+
+    public function edit(Request $request,$id=null)
+    {
+        $data = User::where('id',$id)->first();
+        return view('edit',compact('data'));
     }
 }
